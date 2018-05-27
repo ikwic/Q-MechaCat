@@ -16,9 +16,11 @@ uint8_t servoAngle = 0; // angle for the servo
 // neutral positions for the servos adjusted from nominal 90°
 const float servoDeg0[8] = {90, 90, 90, 90, 90, 90, 90, 90};
 // number of channel for servos on PCB with PCA9685
-const int servoOrder[8] = {0, 1, 4, 5, 8, 9, 12, 13};
+// order: left-front(LF), left-rear(LR), right-front(RF), right-rear(RR)
+// for each one in order - knee and ankle 
+const int servoOrder[8] = {0, 1, 8, 9, 4, 5, 12, 13};
 // turning direction for servos (positive is servo counter-clockwise)
-const int servoDir[8] = {-1
+// const int servoDir[8];
 
 String incomingStr; // for incoming serial data
 
