@@ -26,7 +26,10 @@ MPU6050 mpu;
 
 #define LED_PIN 13 // 
 //                       XA      YA      ZA      XG      YG      ZG
-int MPUOffsets[6] = {  -896,  -5629,    702,     84,     36,     58};
+// offsets for module at work
+//int MPUOffsets[6] = {  -896,  -5629,    702,     84,     36,     58};
+// offsets for module at home
+int MPUOffsets[6] = {  -80,  -3731,    1600,     32,     2,     11};
 
 // ================================================================
 // ===                      i2c SETUP Items                     ===
