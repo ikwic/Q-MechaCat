@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <MPU6050_6Axis_MotionApps20.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <math.h>
 
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
@@ -16,7 +17,7 @@ MPU6050 mpu;
 #ifdef DEBUG
 //#define DPRINT(args...)  Serial.print(args)             //OR use the following syntax:
 #define DPRINTSTIMER(t)    for (static unsigned long SpamTimer; (unsigned long)(millis() - SpamTimer) >= (t); SpamTimer = millis())
-#define  DPRINTSFN(StrSize,Name,...) {char S[StrSize];Serial.print("\t");Serial.print(Name);Serial.print(" "); Serial.print(dtostrf((float)__VA_ARGS__ ,S));}//StringSize,Name,Variable,Spaces,Percision
+#define DPRINTSFN(StrSize,Name,...) {char S[StrSize];Serial.print("\t");Serial.print(Name);Serial.print(" "); Serial.print(dtostrf((float)__VA_ARGS__ ,S));}//StringSize,Name,Variable,Spaces,Percision
 #define DPRINTLN(...)      Serial.println(__VA_ARGS__)
 #else
 #define DPRINTSTIMER(t)    if(false)
@@ -66,11 +67,7 @@ uint8_t fifoBuffer[64]; // FIFO storage buffer
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
-VectorInt16 aa;         // [x, y, z]            accel sensor measurements
-VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
 VectorFloat gravity;    // [x, y, z]            gravity vector
-float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 byte StartUP = 100; // lets get 100 readings from the MPU before we start trusting them (Bot is not trying to balance at this point it is just starting up.)
 
@@ -181,12 +178,21 @@ void MPUMath() {
 
 const int servoOrder[8] = {4, 5, 6, 7, 8, 9, 10, 11};
 const int servoDeg0[8] = {90, 90, 90, 90, 90, 90, 90, 90};
+float servoDeg1[8];
+
+const float pi = 3.14;
 
 int i=0;
 int j=0;
 
-int a1 = 45; // length of upper leg
-int a2 = 90; // length of bottom leg
+
+int Point[2];
+// for legs at work
+//int a1 = 45; // length of upper leg
+//int a2 = 90; // length of bottom leg
+// for leg at home 
+int a1 = 63; // length of upper leg
+int a2 = 75; // length of bottom leg
 
 //---------------CONVERT DEG TO PULSE WIDTH---------------//
 int pulseWidth(int angle) {
@@ -197,6 +203,16 @@ int pulseWidth(int angle) {
   //Serial.println(analog_value);
   return analog_value;
 }
+
+int getPos(int arr[2]) {
+  Serial.print("Write X and Y:");
+  Serial.flush();
+  while(!Serial.available());
+  arr[0] = Serial.parseInt();
+  arr[1] = Serial.parseInt();
+  return arr;
+}
+
 
 
 void setup() {
@@ -222,8 +238,33 @@ void setup() {
 }
 
 void loop() {
-  if (mpuInterrupt ) { // wait for MPU interrupt or extra packet(s) available
-    GetDMP();
+  //if (mpuInterrupt ) { // wait for MPU interrupt or extra packet(s) available
+  //  GetDMP();
+  //}
+  
+  getPos(Point);
+  Serial.print(Point[0]);
+  Serial.print("\t");
+  Serial.println(Point[1]);
+
+  if (abs(Point[0])>(a1+a2) || abs(Point[1])>(a1+a2)) {
+    Serial.println("Can't reach, try again.");
+  } else if(Point[0]==0 and Point[1]==0) {
+    pwm.setPWM(servoOrder[0], 0, pulseWidth(servoDeg0[0]));
+    pwm.setPWM(servoOrder[1], 0, pulseWidth(servoDeg0[1]));
+  } else {    
+    float theta2 = acos((Point[0]^2+Point[1]^2-(a1^2+a2^2))/(2*a1*a2));
+    float theta1 = atan2(Point[1], Point[0]) - atan2(a2*sin(theta2), a1+a2*cos(theta2));
+    Serial.print("theta 1 = ");
+    Serial.print(theta1);
+    Serial.print("\ttheta 2 = ");
+    Serial.println(theta2);
+
+    servoDeg1[0] = servoDeg0[0] - theta1*180/pi;
+    servoDeg1[1] = servoDeg0[0] + theta2*180/pi;
+    pwm.setPWM(servoOrder[0], 0, pulseWidth(servoDeg1[0]));
+    pwm.setPWM(servoOrder[1], 0, pulseWidth(servoDeg1[1]));
   }
   
+  delay(4000);
 }
