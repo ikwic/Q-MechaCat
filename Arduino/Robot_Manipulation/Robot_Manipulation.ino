@@ -178,21 +178,18 @@ void MPUMath() {
 
 const int servoOrder[8] = {4, 5, 6, 7, 8, 9, 10, 11};
 const int servoDeg0[8] = {90, 90, 90, 90, 90, 90, 90, 90};
-float servoDeg1[8];
+//const int servoDir[8] = {-1, -1, ...
+double servoDeg1[8];
 
-const float pi = 3.14;
-
-int i=0;
-int j=0;
-
-
-int Point[2];
 // for legs at work
 //int a1 = 45; // length of upper leg
 //int a2 = 90; // length of bottom leg
 // for leg at home 
 int a1 = 63; // length of upper leg
 int a2 = 75; // length of bottom leg
+
+int Point[2];
+
 
 //---------------CONVERT DEG TO PULSE WIDTH---------------//
 int pulseWidth(int angle) {
@@ -253,15 +250,20 @@ void loop() {
     pwm.setPWM(servoOrder[0], 0, pulseWidth(servoDeg0[0]));
     pwm.setPWM(servoOrder[1], 0, pulseWidth(servoDeg0[1]));
   } else {    
-    float theta2 = acos((Point[0]^2+Point[1]^2-(a1^2+a2^2))/(2*a1*a2));
-    float theta1 = atan2(Point[1], Point[0]) - atan2(a2*sin(theta2), a1+a2*cos(theta2));
+    double theta2 = acos((pow(Point[0],2)+pow(Point[1],2)-(pow(a1,2)+pow(a2,2)))/(2*a1*a2));
+    double theta1 = atan2(Point[1], Point[0]) - atan2(a2*sin(theta2), a1+a2*cos(theta2));
     Serial.print("theta 1 = ");
-    Serial.print(theta1);
+    Serial.print(theta1*180/M_PI);
     Serial.print("\ttheta 2 = ");
-    Serial.println(theta2);
+    Serial.println(theta2*180/M_PI);
 
-    servoDeg1[0] = servoDeg0[0] - theta1*180/pi;
-    servoDeg1[1] = servoDeg0[0] + theta2*180/pi;
+    servoDeg1[0] = servoDeg0[0] - theta1*180/M_PI;
+    servoDeg1[1] = servoDeg0[0] + theta2*180/M_PI;
+    Serial.print("deg1 = ");
+    Serial.print(servoDeg1[0]);
+    Serial.print("\tdeg 2 = ");
+    Serial.println(servoDeg1[1]);
+    
     pwm.setPWM(servoOrder[0], 0, pulseWidth(servoDeg1[0]));
     pwm.setPWM(servoOrder[1], 0, pulseWidth(servoDeg1[1]));
   }
