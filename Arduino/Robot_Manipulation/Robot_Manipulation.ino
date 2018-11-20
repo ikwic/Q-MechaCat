@@ -6,8 +6,8 @@
 
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
-#define MIN_PULSE_WIDTH       650
-#define MAX_PULSE_WIDTH       2350
+#define MIN_PULSE_WIDTH       720
+#define MAX_PULSE_WIDTH       2200
 #define DEFAULT_PULSE_WIDTH   1500
 #define FREQUENCY             50
 
