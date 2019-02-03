@@ -242,17 +242,80 @@ void setup() {
       servoCalibs[i] = servoCalib(i);
       calibratedDuty0[i] =  SERVOMIN + PWM_RANGE / 2 + float(middleShift(i) + servoCalibs[i]) * pulsePerDegree[i]  * rotationDirection(i) ;
       PTL(SERVOMIN + PWM_RANGE / 2 + float(middleShift(i) + servoCalibs[i]) * pulsePerDegree[i] * rotationDirection(i) );
-      calibratedPWM(i, motion.dutyAngles[i]);
+      //calibratedPWM(i, motion.dutyAngles[i]);
+      pwm.setPWM(i, 0, calibratedDuty0[i]);
     }
     randomSeed(analogRead(0));//use the fluctuation of voltage caused by servos as entropy pool
-    shutServos();
-    token = 'd';
+    //shutServos();
+    //token = 'd';
   }
   delay(1000);
   
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  newCmd[0] = '\0';
+  newCmdIdx = 0;
+
+  if ( Serial.available() > 0) {
+    token = Serial.read();
+    newCmdIdx = 3;
+  }
+  //}
+  if (newCmdIdx) {
+    PTL(token);
+    
+    if (token == 'c' || token == 'm') {
+      int8_t target[2] = {};
+      String inBuffer = Serial.readStringUntil('\n');
+      byte inLen = 0;
+      strcpy(newCmd, inBuffer.c_str());
+      char *pch;
+      pch = strtok (newCmd, " ,");
+      for (byte c = 0; pch != NULL; c++)
+      {
+        target[c] = atoi(pch);
+        Serial.println(c);
+        pch = strtok (NULL, " ,");
+        inLen++;
+      }
+
+      if (token == 'c') {
+        //PTLF("calibrating [ targetIdx, angle ]: ");
+        if (strcmp(lastCmd, "c")) { //first time entering the calibration function
+          motion.loadBySkillName("calib");
+          transform( motion.dutyAngles);
+        }
+        if (inLen == 2)
+          servoCalibs[target[0]] = target[1];
+        PTL();
+        for (byte i = 0; i < DOF; i++) {
+          PT(i);
+          PT(",\t");
+        }
+        PTL();
+        printList(servoCalibs);
+        yield();
+
+      }
+      else if (token == 'm') {
+        //SPF("moving [ targetIdx, angle ]: ");
+        motion.dutyAngles[target[0]] = target[1];
+      }
+      PT(token);
+      printList(target, 2);
+
+      int duty = SERVOMIN + PWM_RANGE / 2 + float(middleShift(target[0])  + servoCalibs[target[0]] + motion.dutyAngles[target[0]]) * pulsePerDegree[target[0]] * rotationDirection(target[0]);
+      pwm.setPWM(pin(target[0]), 0,  duty);
+      Serial.print("Setting target: "); Serial.print(pin(target[0])); Serial.print(" to duty: "); Serial.println(duty);
+    }
+
+    else if (Serial.available() > 0) {
+      String inBuffer = Serial.readStringUntil('\n');
+      strcpy(newCmd, inBuffer.c_str());
+    }
+    while (Serial.available() && Serial.read()); //flush the remaining serial buffer in case the commands are parsed incorrectly
+    //check above
+  }  
 
 }
