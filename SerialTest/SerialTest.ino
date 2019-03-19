@@ -57,9 +57,9 @@ void cmdMenu() {
       PT("Moving servo from joint #"); PT(target[0]); PT(" to "); PT(target[1]); PTL(" degrees");
       //motion.dutyAngles[target[0]] = target[1];
     }
-    int duty = SERVOMIN + PWM_RANGE / 2 + float(middleShifts[target[0]] + servoCalibs[target[0]] + target[1]) * pulsePerDegree[target[0]] * rotationDirections[target[0]];
+    int duty = SERVOMIN + PWM_RANGE / 2 + float(middleShifts[target[0]] + calibs[target[0]] + target[1]) * pulsePerDegree[target[0]] * rotationDirections[target[0]];
     PT("Duty = "); PTL(duty);
-    pwm.setPWM(target[0], 0, duty);
+    pwm.setPWM(pins[target[0]], 0, duty);
     yield();
   }
   else if (newCmd[0] == 's') {
@@ -90,7 +90,7 @@ void setup() {
   for (byte i = 0; i < DOF; i++) {
     //motion.dutyAngles[i] = 0;
     pulsePerDegree[i] = float(PWM_RANGE) / servoAngleRanges[i];
-    calibratedDuty0[i] = SERVOMIN + PWM_RANGE / 2 + float(middleShifts[i] + servoCalibs[i]) * pulsePerDegree[i] * rotationDirections[i];
+    calibratedDuty0[i] = SERVOMIN + PWM_RANGE / 2 + float(middleShifts[i] + calibs[i]) * pulsePerDegree[i] * rotationDirections[i];
     calibratedPWM(i, 0 /*motion.dutyAngles[i]*/);
   }
   printList(calibratedDuty0);

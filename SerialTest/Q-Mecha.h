@@ -11,7 +11,7 @@
 byte pins[] = {16, 16, 16, 16,
 			         16, 16, 14, 16,
 			          6, 8, 9, 7,
-			          3, 12, 13, 4
+			          2, 12, 13, 3
 			         };
 #endif
 
@@ -37,9 +37,9 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 float degPerRad = 180 / M_PI;
 float radPerDeg = M_PI / 180;
-
-//byte pins[] = {16, 16, 16, 16, 16, 16, 16, 16, 6, 8, 9, 7, 3, 12, 13, 4};
-int8_t calibs[] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0};
+// joints          0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+// byte pins[] = {16, 16, 16, 16, 16, 16, 16, 16,  6,  8,  9,  7,  2, 12, 13,  3};
+int8_t calibs[] = {0,  0,  0,  0,  0,  0,  0,  0,  5,-12,  0,  3,-12, 12,  3, -4};
 
 int8_t middleShifts[] = {0, 0, 0, 0,
                          0, 0, 0, 0,
