@@ -66,14 +66,40 @@ int calibratedDuty0[DOF] = {};
 
 class Motion {
   public:
-  byte pins[DOF];
-  uint8_t period;
-  char* dutyAngles;
+    byte pins[DOF];
+    uint8_t period;
+    char* dutyAngles;
+    Motion() {
+      period = 0;
+      dutyAngles = NULL; 
+    }
 
-  Motion() {
-    period = 0;
-    dutyAngles = NULL; 
-  }
+    int lookupAddressByName(char* skillName) {
+      int skillAddressShift = 0;
+      for (byte s = 0; s < NUM_SKILLS; s++) {//save skill info to on-board EEPROM, load skills to SkillList
+        byte nameLen = EEPROM.read(SKILLS + skillAddressShift++);
+        char* readName = new char[nameLen + 1];
+        for (byte l = 0; l < nameLen; l++) {
+          readName[l] = EEPROM.read(SKILLS + skillAddressShift++);
+        }
+        readName[nameLen] = '\0';
+        if (!strcmp(readName, skillName)) {
+          delete[]readName;
+          return SKILLS + skillAddressShift;
+        }
+        delete[]readName;
+        skillAddressShift += 3;//1 byte type, 1 int address
+      }
+      PTLF("wrong key!");
+      return -1;
+    }
+    
+    void loadBySkillName(char* skillName) {//get lookup information from on-board EEPROM and read the data array from storage
+      int onBoardEepromAddress = lookupAddressByName(skillName);
+      if (onBoardEepromAddress == -1)
+        return;
+      loadDataByOnboardEepromAddress(onBoardEepromAddress);
+    }
 };
 
 Motion motion;
@@ -93,6 +119,27 @@ void shutServos() {
     pwm.setPWM(i, 0, 4096);
   }
 }
+
+void transform(char* target, float speedRatio = 1, byte offset = 0) {
+  char *diff = new char[DOF - offset], maxDiff = 0;
+
+  for (byte i = offset; i < DOF; i++) {
+    diff[i - offset] = currentAng[i] - target[i-offset];
+    maxDiff = max(maxDiff, abs(diff[i - offset]));
+  }
+
+  byte steps = byte(round(maxDiff / 1.0/*degreeStep*/ / speedRatio)); // default speed is 1 degree per step
+
+  for (byte s = 0; s <= steps; s++) {
+    for (byte i = offset; i < DOF; i++) {
+      float dutyAng = (target[i - offset] + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * diff[i - offset]));
+      calibratedPWM(i, dutyAng);
+    }
+  }
+  delete [] diff;
+}
+
+
 
 //short tools
 template <typename T> int8_t sign(T val) {

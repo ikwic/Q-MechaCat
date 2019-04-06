@@ -1,12 +1,18 @@
-
 #include "Q-Mecha.h"
-
+#include "Instinct.h"
 
 #define CMD_LEN 10
+char *lastCmd = new char[CMD_LEN];
 char *newCmd = new char[CMD_LEN];
 byte newCmdIdx = 0;
 boolean newData = false;
 char token;
+String inBuffer;
+
+// testing this
+uint8_t timer = 0;
+byte firstWalkingJoint;
+byte jointIdx = 0;
 
 void rcvdChars() {
   char endMarker = '\n';
@@ -74,6 +80,17 @@ void cmdMenu() {
     PTL("Shutting down servos...");
     shutServos();
   }
+
+  // motion block
+  else if (newCmd[0] == 'k') {
+    inBuffer = Serial.readStringUntil('\n');
+    strcpy(newCmd, inBuffer.c_str());
+    motion.loadBySkillName(newCmd);
+    timer = 0;
+    firstWalkingJoint = 8;
+    jointIdx = firstWalkingJoint;
+    transform(motion.dutyAngles, 1, firstWalkingJoint);
+  }
 }
 
 void setup() {
@@ -101,6 +118,10 @@ void setup() {
 void loop() {
   //newCmd[0] = '\0';
   //newCmdIdx = 0;
+
+  //while (Serial.available() && Serial.read()); //flush the remaining serial buffer in case the commands are parsed incorrectly
+
+  
   rcvdChars();
   if (newData) {
     PT("Main loop - Received: ");
